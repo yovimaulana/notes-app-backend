@@ -26,7 +26,7 @@ class NotesHandler {
                 }
             })
 
-            response.code(201)
+            response.code(201) 
             return response
         } catch (error) {
 
