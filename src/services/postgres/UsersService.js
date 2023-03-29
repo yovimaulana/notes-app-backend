@@ -4,6 +4,7 @@ const bcrypt = require('bcrypt')
 const InvariantError = require('../../exceptions/InvariantError')
 const NotFoundError = require('../../exceptions/NotFoundError')
 const { mapUserDBToModel } = require('../../utils')
+const AuthencationError = require('../../exceptions/AuthenticationError')
 
 class UsersService {
     constructor() {
@@ -50,6 +51,24 @@ class UsersService {
         if(!result.rows.length) throw new NotFoundError('User tidak ditemukan')
 
         return result.rows.map(mapUserDBToModel)[0]
+    }
+
+    async verifyUserCredential(username, password) {
+        const query = {
+            text: 'select * from users where username = $1',
+            values: [username]
+        }
+
+        const result = await this._pool.query(query)
+
+        if(!result.rows.length) throw new AuthencationError('Kredensial yang Anda berikan salah')
+
+        const {id, password: hashedPassword} = result.rows[0]
+        const match = await bcrypt.compare(password, hashedPassword)
+
+        if(!match) throw new AuthencationError('Kredensial yang Anda berikan salah')
+
+        return id
     }
 }
 
