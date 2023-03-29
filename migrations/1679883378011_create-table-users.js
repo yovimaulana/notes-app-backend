@@ -17,7 +17,7 @@ exports.up = pgm => {
             type: 'varchar(255)',
             notNull: true
         },
-        fullName: {
+        fullname: {
             type: 'TEXT',
             notNull: true
         }

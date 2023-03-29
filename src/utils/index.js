@@ -16,10 +16,10 @@ const mapDBToModel = (
 
 const mapUserDBToModel = (
     {
-        id, username, password, fullName
+        id, username, password, fullname
     }
 ) => ({
-    id, username, password, fullname: fullName
+    id, username, password, fullname: fullname
 })
 
 module.exports = { mapDBToModel, mapUserDBToModel }
