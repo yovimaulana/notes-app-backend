@@ -6,8 +6,9 @@ const AuthorizationError = require('../../exceptions/AuthorizationError')
 const { mapDBToModel } = require('../../utils')
 
 class NotesService {
-    constructor() {
+    constructor(collaborationsService) {
         this._pool = new Pool()
+        this._collaborationsService = collaborationsService
     }
 
     async addNote({title, body, tags, credentialId}){        
@@ -31,7 +32,10 @@ class NotesService {
 
     async getNotes(owner) {
         const query = {
-            text: 'SELECT * FROM notes where owner = $1',
+            text: `SELECT notes.* FROM notes 
+            left join collaborations on collaborations.note_id = notes.id
+            where notes.owner = $1 or collaborations.user_id = $1
+            group by notes.id`,
             values: [owner]
         }
         const result = await this._pool.query(query)
@@ -40,7 +44,9 @@ class NotesService {
 
     async getNoteById(id) {
         const query = {
-            text: 'SELECT * FROM notes where id = $1',
+            text: `SELECT notes.*, users.username FROM notes 
+            left join users on users.id = notes.owner
+            where notes.id = $1`,
             values: [id]
         }
 
@@ -86,6 +92,20 @@ class NotesService {
         const note  = result.rows[0]
 
         if(note.owner !== owner) throw new AuthorizationError('Anda tidak berhak mengakses resource ini')
+    }
+
+    async verifyNoteAccess(noteId, userId) {
+        try {
+            await this.verifyNoteOwner(noteId, userId)
+        } catch (error) {
+            if(error instanceof NotFoundError) throw error
+            try {
+                await this._collaborationsService.verifyCollaborator(noteId, userId)
+            } catch (error) {
+                // throw error
+                throw new AuthorizationError('Anda tidak berhak mengakses resource ini')
+            }
+        }        
     }
 
 
